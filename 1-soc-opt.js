@@ -25,34 +25,48 @@ const data = `city,population,area,density,country
   New York City,8537673,784,10892,United States
   Bangkok,8280925,1569,5279,Thailand`;
 
-if (data) {
-  const lines = data.split('\n');
-  lines.pop();
-  const table = [];
-  let first = true;
-  let max = 0;
-  for (const line of lines) {
-    if (first) {
-      first = false;
-    } else {
-      const cells = line.split(',');
-      const d = parseInt(cells[3]);
-      if (d > max) max = d;
-      table.push([cells[0], cells[1], cells[2], cells[3], cells[4]]);
+const makeArrayFromCSV = (csv) => {
+  const cityArray = [];
+  const lines = csv.split('\n');
+  const headers = lines[0].split(',');
+  for (let i = 1; i < lines.length; i++) {
+    const cells = lines[i].split(',');
+    const rowObject = {};
+    for (let j = 0; j < headers.length; j++) {
+      let cell = isNaN(cells[j]) ? cells[j] : parseInt(cells[j]);
+      rowObject[headers[j]] = cell;
     }
+    cityArray.push(rowObject);
   }
-  for (const row of table) {
-    const a = Math.round((row[3] * 100) / max);
-    row.push(a.toString());
+  return cityArray;
+}
+
+const tableSort = (data, headIndex = 'amount') => {
+  return data.sort((r1, r2) => r2[headIndex] - r1[headIndex]);
+}
+class Table {
+  constructor(data) {
+    this.data = data;
   }
-  table.sort((r1, r2) => r2[5] - r1[5]);
-  for (const row of table) {
-    let s = row[0].padEnd(18);
-    s += row[1].padStart(10);
-    s += row[2].padStart(8);
-    s += row[3].padStart(8);
-    s += row[4].padStart(18);
-    s += row[5].padStart(6);
-    console.log(s);
+  
+  getTable(tableIndex) {
+    const table = [];
+    let maxDensity = 0;
+
+    for (const elem of this.data) {
+      const density = parseInt(elem.density);
+      if (density > maxDensity) maxDensity = density;
+      table.push({ city: elem.city.trim(), population: elem.population, area: elem.area, density: elem.density, country: elem.country });
+    }
+    for (const elem of table) {
+      const a = Math.round((elem[tableIndex] * 100) / maxDensity);
+      elem.amount = parseInt(a.toString());
+    }
+    
+    return tableSort(table, 'amount');
   }
 }
+
+const convertedData = makeArrayFromCSV(data);
+const table = new Table(convertedData);
+console.table(table.getTable('density'));
